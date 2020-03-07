@@ -52,11 +52,12 @@ fn main() {
 
     let lower_bound = 0.0;
     let upper_bound = 100.0;
-    let data_in_iter = (0..1024*100).map(|_| (rng.gen_range(lower_bound, upper_bound), rng.gen_range(lower_bound, upper_bound)));
-    /* let data_in_iter2 = (0..1024*100).map(|_| (rng.gen_range(lower_bound, upper_bound), rng.gen_range(lower_bound, upper_bound)));
-    for (x, y) in data_in_iter2 {
-        println!("x: {} y: {}", x, y);
-    } */
+    let data_in_iter = (0..1024*100).map(|_| (rng.gen_range(lower_bound, upper_bound), rng.gen_range(lower_bound, upper_bound), rng.gen_range(1.0, 3.0)));
+    let mut rng = thread_rng();
+    let data_in_iter2 = (0..1024*100).map(|_| (rng.gen_range(lower_bound, upper_bound), rng.gen_range(lower_bound, upper_bound), rng.gen_range(1.0, 3.0)));
+    for (x, y, r) in data_in_iter2 {
+        println!("x: {} y: {} r: {}", x, y, r);
+    }
 
     let data_in_buffer =
         CpuAccessibleBuffer::from_iter(device.clone(), BufferUsage::all(), false, data_in_iter)
@@ -78,7 +79,7 @@ fn main() {
                     layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
                     
                     layout(set = 0, binding = 0) buffer DataIn {
-                        dvec2 data[];
+                        dvec3 data[];
                     } buf_in;
     
                     layout(set = 0, binding = 1) buffer DataOut {
@@ -87,8 +88,11 @@ fn main() {
                     
                     void main() {
                         uint idx = gl_GlobalInvocationID.x;
-                        double dist_squared = (buf_in.data[idx].x - 50) * (buf_in.data[idx].x - 50) + (buf_in.data[idx].y - 50) * (buf_in.data[idx].y - 50);
-                        buf_out.data[idx] =  dist_squared <= 25 ? 1 : 0;
+                        double dist_squared = 
+                            (buf_in.data[idx].x - 50) * (buf_in.data[idx].x - 50) +
+                            (buf_in.data[idx].y - 50) * (buf_in.data[idx].y - 50);
+                        buf_out.data[idx] = 
+                            dist_squared <= (2 + buf_in.data[idx].z) * (2 + buf_in.data[idx].z) ? 1 : 0;
                     }
                 "
             }
